@@ -232,10 +232,14 @@
 
         /* Bubbles with images */
         .bubble.has-image {
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 
                 0 0 30px rgba(255, 107, 157, 0.2),
                 inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .bubble.has-image img {
+            border-radius: 50%;
         }
 
         .bubble.has-image:hover {
@@ -368,7 +372,7 @@
            
            Set to 0 to have only transparent bubbles (no images)
         */
-        const IMAGE_COUNT = 9;  // ← CHANGE THIS to the number of images in your /images folder
+        const IMAGE_COUNT = 13;  // ← CHANGE THIS to the number of images in your /images folder
         
         /*
            Optional: Set IMAGE_EXTENSION if using jpg, webp, etc.
@@ -407,7 +411,7 @@
            
            ★★★ TWEAK RESPAWN TIMING HERE ★★★
         */
-        const RESPAWN_DELAY = 3000; // Time in ms before bubble reappears (3 seconds)
+        const RESPAWN_DELAY = 30000; // Time in ms before bubble reappears (30 seconds)
 
         /* ============================================
            PHYSICS CONFIGURATION - VERY GENTLE
