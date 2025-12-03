@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>memebubble</title>
+    <style>
+        /* ============================================
+           GLOBAL STYLES
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: #000000; /* Pure black background */
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #ffffff;
+        }
+
+        /* ============================================
+           HEADER STYLES
+           - No visual separation from body
+           - Floats above the bubbles with z-index
+           ============================================ */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-link {
+            padding: 10px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.pump {
+            background: linear-gradient(135deg, #22cc66, #18a050);
+            border-color: transparent;
+        }
+
+        .nav-link.pump:hover {
+            background: linear-gradient(135deg, #33dd77, #22bb60);
+            box-shadow: 0 5px 25px rgba(34, 204, 102, 0.4);
+        }
+
+        /* ============================================
+           BUBBLE CONTAINER
+           ============================================ */
+        .bubble-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+
+        /* ============================================
+           BUBBLE STYLES
+           ============================================ */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* ============================================
+           TRANSPARENT SOAP BUBBLE EFFECT
+           ============================================ */
+        .bubble.transparent-bubble {
+            background: radial-gradient(
+                ellipse at 30% 20%,
+                rgba(255, 255, 255, 0.4) 0%,
+                rgba(255, 255, 255, 0.1) 20%,
+                rgba(150, 200, 255, 0.05) 40%,
+                rgba(100, 150, 255, 0.03) 60%,
+                transparent 70%
+            );
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                inset 0 0 20px rgba(255, 255, 255, 0.1),
+                inset -20px -20px 40px rgba(150, 200, 255, 0.1),
+                inset 10px 10px 30px rgba(255, 150, 200, 0.05),
+                0 0 30px rgba(255, 255, 255, 0.05);
+            overflow: visible;
+        }
+
+        .bubble.transparent-bubble::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 35%;
+            height: 25%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                transparent 70%
+            );
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+
+        .bubble.transparent-bubble::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 55%;
+            width: 12%;
+            height: 10%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(255, 255, 255, 0.5) 0%,
+                transparent 70%
+            );
+            border-radius: 50%;
+        }
+
+        .bubble.transparent-bubble .iridescence {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 180deg,
+                rgba(255, 100, 150, 0.08) 0deg,
+                rgba(150, 100, 255, 0.08) 60deg,
+                rgba(100, 200, 255, 0.08) 120deg,
+                rgba(100, 255, 200, 0.08) 180deg,
+                rgba(255, 255, 100, 0.08) 240deg,
+                rgba(255, 150, 100, 0.08) 300deg,
+                rgba(255, 100, 150, 0.08) 360deg
+            );
+            opacity: 0.7;
+            animation: rotateIridescence 8s linear infinite;
+        }
+
+        @keyframes rotateIridescence {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Bubble burst animation */
+        @keyframes bubbleBurst {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Bubble respawn animation */
+        @keyframes bubbleRespawn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .bubble.bursting {
+            animation: bubbleBurst 0.4s ease-out forwards;
+            pointer-events: none;
+        }
+
+        .bubble.respawning {
+            animation: bubbleRespawn 0.6s ease-out forwards;
+        }
+
+        .bubble.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Bubbles with images */
+        .bubble.has-image {
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px rgba(255, 107, 157, 0.2),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .bubble.has-image:hover {
+            box-shadow: 
+                0 0 50px rgba(255, 107, 157, 0.4),
+                inset 0 0 30px rgba(255, 255, 255, 0.15);
+        }
+
+        .bubble img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* ============================================
+           CANDLE CRASH ANIMATION STYLES
+           ============================================ */
+        .candle-overlay {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 600%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .candle {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+        }
+
+        .candle-wick {
+            width: 2px;
+            background: #ff4444;
+            border-radius: 1px;
+        }
+
+        .candle-body {
+            border-radius: 2px;
+        }
+
+        .candle-body.red {
+            background: linear-gradient(180deg, #ff2222, #aa0000);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+        }
+
+        .candle-body.green {
+            background: linear-gradient(180deg, #22cc44, #118833);
+            box-shadow: 0 0 10px rgba(34, 204, 68, 0.6);
+        }
+
+        .candle-wick.green,
+        .candle-wick-bottom.green {
+            background: #22cc44;
+        }
+
+        .candle-wick-bottom {
+            width: 2px;
+            background: #ff4444;
+            border-radius: 1px;
+        }
+
+        /* ============================================
+           RESPONSIVE STYLES
+           ============================================ */
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+            }
+
+            .logo {
+                font-size: 1.4rem;
+            }
+
+            .nav-link {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+
+            .nav-links {
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+         HEADER
+         ============================================ -->
+    <header class="header">
+        <div class="logo">memebubble</div>
+        <nav class="nav-links">
+            <a href="https://x.com/yourmemecoin" target="_blank" class="nav-link">X</a>
+            <a href="https://pump.fun/yourmemecoin" target="_blank" class="nav-link pump">Pump</a>
+        </nav>
+    </header>
+
+    <!-- ============================================
+         BUBBLE CONTAINER
+         ============================================ -->
+    <div class="bubble-container" id="bubbleContainer"></div>
+
+    <script>
+        /* ============================================
+           ★★★ IMAGE CONFIGURATION - EDIT THIS! ★★★
+           ============================================
+           
+           HOW TO ADD IMAGES:
+           1. Put your images in the "images" folder
+           2. Name them: 1.png, 2.png, 3.png, etc.
+           3. Change IMAGE_COUNT below to match how many images you have
+           
+           Example: If you have 5 images (1.png through 5.png), set IMAGE_COUNT = 5
+           
+           Set to 0 to have only transparent bubbles (no images)
+        */
+        const IMAGE_COUNT = 5;  // ← CHANGE THIS to the number of images in your /images folder
+        
+        /*
+           Optional: Set IMAGE_EXTENSION if using jpg, webp, etc.
+           Default is 'png'
+        */
+        const IMAGE_EXTENSION = 'png';
+        
+        /*
+           EXTRA_TRANSPARENT_BUBBLES: Number of additional transparent bubbles
+           These will be added on top of your image bubbles
+        */
+        const EXTRA_TRANSPARENT_BUBBLES = 10;
+
+        /* ============================================
+           BUBBLE SIZE CONFIGURATION
+           ============================================
+           
+           Bubbles get random sizes between MIN and MAX
+        */
+        const BUBBLE_MIN_SIZE = 70;
+        const BUBBLE_MAX_SIZE = 180;
+
+        /* ============================================
+           CANDLE ANIMATION CONFIGURATION
+           ============================================
+        */
+        const candleConfig = {
+            candleCount: 10,
+            animationDuration: 4000,
+            delayBetweenCandles: 200,
+        };
+
+        /* ============================================
+           BUBBLE RESPAWN CONFIGURATION
+           ============================================
+           
+           ★★★ TWEAK RESPAWN TIMING HERE ★★★
+        */
+        const RESPAWN_DELAY = 3000; // Time in ms before bubble reappears (3 seconds)
+
+        /* ============================================
+           PHYSICS CONFIGURATION - VERY GENTLE
+           ============================================
+        */
+        const physicsConfig = {
+            pushRadius: 80,          // Smaller radius
+            pushStrength: 0.02,      // Very gentle push
+            friction: 0.995,         // Very slippery (slow down slowly)
+            floatSpeed: 0.15,        // Gentle ambient floating
+            bounceRestitution: 0.5,
+            maxVelocity: 1.5,        // Very slow max speed
+        };
+
+        /* ============================================
+           GENERATE BUBBLE CONFIGURATIONS
+           ============================================ */
+        function generateBubbleConfigs() {
+            const configs = [];
+            
+            // Add image bubbles
+            for (let i = 1; i <= IMAGE_COUNT; i++) {
+                configs.push({
+                    src: `images/${i}.${IMAGE_EXTENSION}`,
+                    size: BUBBLE_MIN_SIZE + Math.random() * (BUBBLE_MAX_SIZE - BUBBLE_MIN_SIZE),
+                    x: 10 + Math.random() * 80,  // Random position 10-90%
+                    y: 15 + Math.random() * 70,  // Random position 15-85%
+                });
+            }
+            
+            // Add transparent bubbles
+            for (let i = 0; i < EXTRA_TRANSPARENT_BUBBLES; i++) {
+                configs.push({
+                    src: null,
+                    size: BUBBLE_MIN_SIZE + Math.random() * (BUBBLE_MAX_SIZE - BUBBLE_MIN_SIZE),
+                    x: 5 + Math.random() * 90,
+                    y: 10 + Math.random() * 80,
+                });
+            }
+            
+            return configs;
+        }
+
+        const bubbleConfig = generateBubbleConfigs();
+
+        /* ============================================
+           MOUSE TRACKING
+           ============================================ */
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let prevMouseX = mouseX;
+        let prevMouseY = mouseY;
+        let mouseVelX = 0;
+        let mouseVelY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            prevMouseX = mouseX;
+            prevMouseY = mouseY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            mouseVelX = mouseX - prevMouseX;
+            mouseVelY = mouseY - prevMouseY;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                prevMouseX = mouseX;
+                prevMouseY = mouseY;
+                mouseX = e.touches[0].clientX;
+                mouseY = e.touches[0].clientY;
+                mouseVelX = mouseX - prevMouseX;
+                mouseVelY = mouseY - prevMouseY;
+            }
+        });
+
+        /* ============================================
+           BUBBLE CLASS
+           ============================================ */
+        class Bubble {
+            constructor(config, index, container) {
+                this.config = config;
+                this.index = index;
+                this.container = container;
+                
+                this.x = (config.x / 100) * window.innerWidth;
+                this.y = (config.y / 100) * window.innerHeight;
+                
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+                
+                this.floatPhase = Math.random() * Math.PI * 2;
+                this.floatPhase2 = Math.random() * Math.PI * 2;
+                this.floatSpeed = 0.2 + Math.random() * 0.2;
+                
+                this.size = config.size;
+                
+                this.element = this.createElement();
+                container.appendChild(this.element);
+                
+                this.element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.triggerCandleAnimation();
+                });
+            }
+            
+            createElement() {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                
+                if (this.config.src) {
+                    bubble.classList.add('has-image');
+                    const img = document.createElement('img');
+                    img.src = this.config.src;
+                    img.alt = 'Bubble image';
+                    img.draggable = false;
+                    // Handle image load errors - fallback to transparent bubble
+                    img.onerror = () => {
+                        bubble.classList.remove('has-image');
+                        bubble.classList.add('transparent-bubble');
+                        bubble.removeChild(img);
+                        const iridescence = document.createElement('div');
+                        iridescence.className = 'iridescence';
+                        bubble.appendChild(iridescence);
+                    };
+                    bubble.appendChild(img);
+                } else {
+                    bubble.classList.add('transparent-bubble');
+                    const iridescence = document.createElement('div');
+                    iridescence.className = 'iridescence';
+                    bubble.appendChild(iridescence);
+                }
+                
+                bubble.style.width = `${this.size}px`;
+                bubble.style.height = `${this.size}px`;
+                
+                return bubble;
+            }
+            
+            update(deltaTime) {
+                const dx = this.x - mouseX;
+                const dy = this.y - mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const mouseSpeed = Math.sqrt(mouseVelX * mouseVelX + mouseVelY * mouseVelY);
+                
+                // Only react if mouse is moving fast AND very close
+                if (distance < physicsConfig.pushRadius + this.size / 2 && mouseSpeed > 3) {
+                    const normalizedVelX = mouseVelX / (mouseSpeed + 0.1);
+                    const normalizedVelY = mouseVelY / (mouseSpeed + 0.1);
+                    
+                    // Proximity factor
+                    const proximity = 1 - (distance / (physicsConfig.pushRadius + this.size / 2));
+                    const force = proximity * physicsConfig.pushStrength;
+                    
+                    // Gentle brush in mouse direction only
+                    this.vx += normalizedVelX * force * mouseSpeed * 0.3;
+                    this.vy += normalizedVelY * force * mouseSpeed * 0.3;
+                }
+                
+                // Gentle ambient floating (main motion)
+                this.floatPhase += deltaTime * 0.0005 * this.floatSpeed;
+                this.floatPhase2 += deltaTime * 0.0003 * this.floatSpeed;
+                
+                this.vx += Math.sin(this.floatPhase) * physicsConfig.floatSpeed * 0.008;
+                this.vy += Math.cos(this.floatPhase2) * physicsConfig.floatSpeed * 0.008;
+                
+                // Apply friction
+                this.vx *= physicsConfig.friction;
+                this.vy *= physicsConfig.friction;
+                
+                // Cap velocity
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > physicsConfig.maxVelocity) {
+                    this.vx = (this.vx / speed) * physicsConfig.maxVelocity;
+                    this.vy = (this.vy / speed) * physicsConfig.maxVelocity;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Bounce off walls
+                const padding = this.size / 2;
+                const headerHeight = 80;
+                
+                if (this.x < padding) {
+                    this.x = padding;
+                    this.vx *= -physicsConfig.bounceRestitution;
+                }
+                if (this.x > window.innerWidth - padding) {
+                    this.x = window.innerWidth - padding;
+                    this.vx *= -physicsConfig.bounceRestitution;
+                }
+                if (this.y < headerHeight + padding) {
+                    this.y = headerHeight + padding;
+                    this.vy *= -physicsConfig.bounceRestitution;
+                }
+                if (this.y > window.innerHeight - padding) {
+                    this.y = window.innerHeight - padding;
+                    this.vy *= -physicsConfig.bounceRestitution;
+                }
+                
+                this.element.style.left = `${this.x - this.size / 2}px`;
+                this.element.style.top = `${this.y - this.size / 2}px`;
+            }
+            
+            triggerCandleAnimation() {
+                const existingOverlay = this.element.querySelector('.candle-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                }
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'candle-overlay';
+                
+                // Candle width - all same width, flush against each other
+                const candleWidth = 8;
+                const totalWidth = candleConfig.candleCount * candleWidth;
+                const startX = (this.size * 0.9 - totalWidth) / 2; // Center the chart
+                
+                // Track price level - starts at top, trends down
+                let priceLevel = 10; // Starting Y position
+                
+                for (let i = 0; i < candleConfig.candleCount; i++) {
+                    const candle = document.createElement('div');
+                    candle.className = 'candle';
+                    
+                    // Determine if this is a green candle (relief rally)
+                    // ~20% chance, never first or last 2
+                    const isGreen = i > 0 && i < candleConfig.candleCount - 2 && Math.random() < 0.20;
+                    const color = isGreen ? 'green' : 'red';
+                    
+                    // Candle body height (price movement)
+                    let bodyHeight;
+                    if (isGreen) {
+                        // Green: small body (small pump)
+                        bodyHeight = 8 + Math.random() * 15;
+                    } else {
+                        // Red: gets bigger as crash accelerates
+                        bodyHeight = 12 + (i * 4) + Math.random() * 20;
+                    }
+                    
+                    // Wicks
+                    const wickTopHeight = 2 + Math.random() * 8;
+                    const wickBottomHeight = 2 + Math.random() * 6;
+                    
+                    // Calculate vertical position
+                    // For RED candle: opens near previous close, closes LOWER
+                    // For GREEN candle: opens near previous close, closes HIGHER
+                    let candleTop;
+                    if (isGreen) {
+                        // Green opens at current level, body goes UP
+                        // So the candle top is above current price
+                        candleTop = priceLevel - bodyHeight;
+                        // Price moves up slightly for next candle
+                        priceLevel -= bodyHeight * 0.3; // Small recovery
+                    } else {
+                        // Red opens at current level, body goes DOWN
+                        candleTop = priceLevel;
+                        // Price drops for next candle (bottom of this candle)
+                        priceLevel += bodyHeight * 0.85; // Most of the drop carries over
+                    }
+                    
+                    // Ensure we don't go above start
+                    if (candleTop < 0) candleTop = 0;
+                    if (priceLevel < 5) priceLevel = 5;
+                    
+                    // Position candle
+                    const candleX = startX + (i * candleWidth);
+                    
+                    const wickTop = document.createElement('div');
+                    wickTop.className = `candle-wick ${color}`;
+                    wickTop.style.height = `${wickTopHeight}px`;
+                    
+                    const body = document.createElement('div');
+                    body.className = `candle-body ${color}`;
+                    body.style.width = `${candleWidth - 1}px`; // -1 for tiny gap visibility
+                    body.style.height = `${bodyHeight}px`;
+                    
+                    const wickBottom = document.createElement('div');
+                    wickBottom.className = `candle-wick-bottom ${color}`;
+                    wickBottom.style.height = `${wickBottomHeight}px`;
+                    
+                    candle.appendChild(wickTop);
+                    candle.appendChild(body);
+                    candle.appendChild(wickBottom);
+                    
+                    // Position absolutely
+                    candle.style.left = `${candleX}px`;
+                    candle.style.top = `${candleTop}px`;
+                    
+                    const delay = i * candleConfig.delayBetweenCandles;
+                    
+                    setTimeout(() => {
+                        candle.style.transition = 'opacity 0.12s ease-in';
+                        candle.style.opacity = '1';
+                    }, delay);
+                    
+                    setTimeout(() => {
+                        candle.style.transition = 'opacity 0.5s ease-out';
+                        candle.style.opacity = '0';
+                    }, delay + candleConfig.animationDuration - 500);
+                    
+                    overlay.appendChild(candle);
+                }
+                
+                this.element.appendChild(overlay);
+                
+                // Calculate when candles finish
+                const candlesFinishTime = candleConfig.candleCount * candleConfig.delayBetweenCandles;
+                
+                // Burst the bubble when candles finish falling
+                setTimeout(() => {
+                    // Remove candle overlay
+                    if (overlay.parentNode === this.element) {
+                        overlay.remove();
+                    }
+                    
+                    // Trigger burst animation
+                    this.burst();
+                }, candlesFinishTime + 300);
+            }
+            
+            burst() {
+                // Add bursting class for animation
+                this.element.classList.add('bursting');
+                
+                // After burst animation, hide the bubble
+                setTimeout(() => {
+                    this.element.classList.remove('bursting');
+                    this.element.classList.add('hidden');
+                    
+                    // Respawn after delay
+                    setTimeout(() => {
+                        this.respawn();
+                    }, RESPAWN_DELAY);
+                }, 400); // Match burst animation duration
+            }
+            
+            respawn() {
+                // Move to a new random position
+                this.x = 100 + Math.random() * (window.innerWidth - 200);
+                this.y = 150 + Math.random() * (window.innerHeight - 250);
+                
+                // Reset velocity
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+                
+                // Show bubble with respawn animation
+                this.element.classList.remove('hidden');
+                this.element.classList.add('respawning');
+                
+                // Remove respawn class after animation
+                setTimeout(() => {
+                    this.element.classList.remove('respawning');
+                }, 600);
+            }
+        }
+
+        /* ============================================
+           INITIALIZE
+           ============================================ */
+        const container = document.getElementById('bubbleContainer');
+        const bubbles = [];
+
+        bubbleConfig.forEach((config, index) => {
+            bubbles.push(new Bubble(config, index, container));
+        });
+
+        let lastTime = performance.now();
+
+        function animate(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            bubbles.forEach(bubble => {
+                bubble.update(deltaTime);
+            });
+            
+            mouseVelX *= 0.85;
+            mouseVelY *= 0.85;
+            
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+
+        window.addEventListener('resize', () => {
+            const isMobile = window.innerWidth <= 768;
+            const scaleFactor = isMobile ? 0.6 : 1;
+            
+            bubbles.forEach((bubble, index) => {
+                const newSize = bubbleConfig[index].size * scaleFactor;
+                bubble.size = newSize;
+                bubble.element.style.width = `${newSize}px`;
+                bubble.element.style.height = `${newSize}px`;
+            });
+        });
+    </script>
+</body>
+</html>
