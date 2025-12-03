@@ -511,10 +511,17 @@
                 this.element = this.createElement();
                 container.appendChild(this.element);
                 
-                this.element.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.triggerCandleAnimation();
-                });
+                // Only add click handler for bubbles WITH images
+                if (this.config.src) {
+                    this.element.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.triggerCandleAnimation();
+                    });
+                    this.element.style.cursor = 'pointer';
+                } else {
+                    // Transparent bubbles - no interaction
+                    this.element.style.cursor = 'default';
+                }
             }
             
             createElement() {
